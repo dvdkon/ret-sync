@@ -22,6 +22,7 @@ package retsync;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,15 +42,17 @@ import ghidra.app.cmd.comments.AppendCommentCmd;
 import ghidra.app.cmd.comments.SetCommentCmd;
 import ghidra.app.cmd.function.SetFunctionRepeatableCommentCmd;
 import ghidra.app.cmd.label.AddLabelCmd;
-import ghidra.app.decompiler.component.DecompilerHighlightService;
+import ghidra.app.decompiler.component.DecompilerPanel;
 import ghidra.app.events.ProgramActivatedPluginEvent;
 import ghidra.app.events.ProgramClosedPluginEvent;
 import ghidra.app.plugin.PluginCategoryNames;
 import ghidra.app.plugin.ProgramPlugin;
+import ghidra.app.plugin.core.decompile.DecompilerProvider;
 import ghidra.app.services.CodeViewerService;
 import ghidra.app.services.ConsoleService;
 import ghidra.app.services.GoToService;
 import ghidra.app.services.ProgramManager;
+import ghidra.app.util.PluginConstants;
 import ghidra.framework.cmd.Command;
 import ghidra.framework.plugintool.PluginInfo;
 import ghidra.framework.plugintool.PluginTool;
@@ -76,8 +79,7 @@ import ghidra.program.util.ProgramLocation;
                 ProgramManager.class,
                 ConsoleService.class,
                 CodeViewerService.class,
-                GoToService.class,
-                DecompilerHighlightService.class},
+                GoToService.class},
         eventsConsumed = {
                 ProgramActivatedPluginEvent.class,
                 ProgramClosedPluginEvent.class }
@@ -93,7 +95,8 @@ public class RetSyncPlugin extends ProgramPlugin {
     CodeViewerService cvs;
     ProgramManager pm;
     LocalColorizerService clrs;
-    DecompilerHighlightService dhs;
+
+    DecompilerPanel dpan;
 
     // client handling
     ListenerBackground server;
@@ -136,7 +139,16 @@ public class RetSyncPlugin extends ProgramPlugin {
         gs = tool.getService(GoToService.class);
         pm = tool.getService(ProgramManager.class);
         cvs = tool.getService(CodeViewerService.class);
-        dhs = tool.getService(DecompilerHighlightService.class);
+        DecompilerProvider dprov = (DecompilerProvider) tool.getComponentProvider("Decompiler");
+        try {
+            Method gdp = DecompilerProvider.class.getDeclaredMethod("getDecompilerPanel");
+            gdp.setAccessible(true);
+            dpan = (DecompilerPanel) gdp.invoke(dprov);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
         clrs = new LocalColorizerService(this);
 
         loadConfiguration();

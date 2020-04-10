@@ -163,7 +163,7 @@ public class LocalColorizerService {
 
     // enhance highlight in decompiler (full line)
     public void enhancedDecompHighlight(Address addr) {
-        ClangLayoutController clc = (ClangLayoutController) rsplugin.dhs.getLayoutModel();
+        ClangLayoutController clc = (ClangLayoutController) rsplugin.dpan.getLayoutModel();
         ClangTokenGroup root = clc.getRoot();
         AddressSet locs = new AddressSet(addr);
         List<ClangToken> tokens = DecompilerUtils.getTokens(root, locs);
